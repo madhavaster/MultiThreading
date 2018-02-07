@@ -1,21 +1,63 @@
 package com.madhav.demo2;
-// Usage of wait and notify methods
+// 2 threads waiting for notification on an object scenario.
 public class ThreadA {
 	
 	public static void main(String[] args) throws InterruptedException {
-	System.out.println(Thread.currentThread().getName()+"...started");
-	ThreadB t = new ThreadB();
-	t.start();
-	synchronized(t) {
-		System.out.println("main thread trying to call wait method");
-		t.wait();// immediately main thread enters into waiting state.
-		System.out.println("main thread got notification");
-	}
-	System.out.println(t.getTotal());
-	System.out.println(Thread.currentThread().getName()+"...ended");
+		ThreadB b = new ThreadB();
+		Thread1 t1 = new Thread1(b);
+		Thread2 t2 = new Thread2(b);
+		b.start();
+		t1.start();
+		t2.start();
 	}
 }
-	
+class Thread1 extends Thread{
+	private ThreadB b;
+	public Thread1(ThreadB b) {
+		this.b=b;
+	}
+	@Override
+	public void run() {
+		System.out.println("Thread1 started");
+		synchronized(b) {
+		System.out.println("Thread1 got the lock of object b");
+			try {
+				System.out.println("Thread1 calling wait method on b");
+				b.wait();
+				System.out.println("Thread1 is notified now");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Thread1 printing total value"+ b.getTotal());
+		System.out.println("Thread1 is releasing the lock of object b");
+		}
+		System.out.println("Thread1 ended");
+	}
+}
+class Thread2 extends Thread{
+	private ThreadB b;
+
+	public Thread2(ThreadB b) {
+		this.b=b;
+	}
+	@Override
+	public void run() {
+		System.out.println("Thread2 started");
+		synchronized(b) {
+			System.out.println("Thread2 got the lock of object b");
+			try {
+				System.out.println("Thread2 caling wait method on b");
+				b.wait();
+				System.out.println("Thread2 is notified now");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Thread2 printing total value"+b.getTotal());
+			System.out.println("Thread2 is releasing the lock of object b");
+		}
+		System.out.println("Thread2 ended");
+	}
+}
 class ThreadB extends Thread{
 	private int total;
 	public int getTotal() {
@@ -26,24 +68,47 @@ class ThreadB extends Thread{
 	}
 	@Override
 	public void run() {
-		System.out.println(Thread.currentThread().getName()+"...started");
-		for(int i=1;i<=100;i++) {
-			total = total+i;
-		} 
+		System.out.println("ThreadB started");
+		try {
+			System.out.println("ThreadB going to sleep for 10000ms");
+			Thread.sleep(10000);
+			System.out.println("ThreadB is awake now");
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		synchronized(this) {
-			System.out.println("child thread to trying to give notification");
+			System.out.println("ThreadB got the lock of this and started calculating");
+			for(int i=1;i<=100;i++) {
+				total = total+i;
+			} 
+			System.out.println("ThreadB is done with calculation"+total+"..and giving notification now");
 			this.notify();
 		}
-		System.out.println(Thread.currentThread().getName()+"...ended");
+		System.out.println("ThreadB ended");
 	}
 }
 
-/*o/p
-main...started
-main thread trying to call wait method
-Thread-0...started
-child thread to trying to give notification
-Thread-0...ended
-main thread got notification
-5050
-main...ended*/
+/*output of this program
+========================================================================
+ThreadB started
+ThreadB going to sleep for 10000ms
+Thread1 started
+Thread2 started
+Thread1 got the lock of object b
+Thread1 calling wait method on b
+Thread2 got the lock of object b
+Thread2 caling wait method on b
+ThreadB is awake now
+ThreadB got the lock of this and started calculating
+ThreadB is done with calculation5050..and giving notification now
+Thread1 is notified now
+Thread1 printing total value5050
+Thread1 is releasing the lock of object b
+Thread1 ended
+ThreadB ended
+Thread2 is notified now
+Thread2 printing total value5050
+Thread2 is releasing the lock of object b
+Thread2 ended
+========================================================================
+*/
