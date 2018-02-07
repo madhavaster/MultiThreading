@@ -1,13 +1,16 @@
 package com.madhav.demo2;
-
+// Usage of wait and notify methods
 public class ThreadA {
 	
 	public static void main(String[] args) throws InterruptedException {
 	System.out.println(Thread.currentThread().getName()+"...started");
 	ThreadB t = new ThreadB();
 	t.start();
-	
-	t.wait();
+	synchronized(t) {
+		System.out.println("main thread trying to call wait method");
+		t.wait();// immediately main thread enters into waiting state.
+		System.out.println("main thread got notification");
+	}
 	System.out.println(t.getTotal());
 	System.out.println(Thread.currentThread().getName()+"...ended");
 	}
@@ -26,19 +29,21 @@ class ThreadB extends Thread{
 		System.out.println(Thread.currentThread().getName()+"...started");
 		for(int i=1;i<=100;i++) {
 			total = total+i;
+		} 
+		synchronized(this) {
+			System.out.println("child thread to trying to give notification");
+			this.notify();
 		}
-		this.notify();
 		System.out.println(Thread.currentThread().getName()+"...ended");
 	}
 }
 
 /*o/p
 main...started
+main thread trying to call wait method
 Thread-0...started
-Exception in thread "main" Exception in thread "Thread-0" java.lang.IllegalMonitorStateException
-	at java.lang.Object.notify(Native Method)
-	at com.madhav.demo2.ThreadB.run(ThreadA.java:30)
-java.lang.IllegalMonitorStateException
-	at java.lang.Object.wait(Native Method)
-	at java.lang.Object.wait(Object.java:502)
-	at com.madhav.demo2.ThreadA.main(ThreadA.java:10)*/
+child thread to trying to give notification
+Thread-0...ended
+main thread got notification
+5050
+main...ended*/
